@@ -1,0 +1,9 @@
+instance,algorithm,execution_seed,target_value,target_reached,time_to_target,final_solution_value,total_time
+instance-05.txt,GRASP,0,1100,False,600.2817,1008.0,600.2817
+instance-05.txt,GRASP,1,1100,False,600.1780,1059.0,600.1780
+instance-05.txt,GRASP,2,1100,False,600.1651,1039.0,600.1651
+instance-05.txt,GRASP,3,1100,False,600.2248,1000.0,600.2248
+instance-05.txt,GRASP,4,1100,False,600.3048,993.0,600.3048
+instance-05.txt,GRASP,5,1100,False,600.0233,1061.0,600.0233
+instance-05.txt,GRASP,6,1100,False,600.5961,999.0,600.5961
+instance-05.txt,GRASP,7,1100,False,600.1211,1039.0,600.1211
