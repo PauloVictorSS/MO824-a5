@@ -5,8 +5,6 @@ import gurobipy as gp
 from gurobipy import GRB
 import sys
 from dataclasses import dataclass
-import os
-import concurrent.futures
 
 class SCQBFInstance:
     def __init__(self, filepath):
@@ -52,10 +50,7 @@ class SCQBFSolution:
     x: list[int]
     value: float
 
-def scqbf_evaluate(instance: SCQBFInstance, solution) -> float:
-    if hasattr(solution, 'value') and solution.value != 0:
-        return solution.value
-    
+def scqbf_evaluate(instance: SCQBFInstance, solution: list) -> float:
     objective_value = 0.0
     for (i, j), q_ij in instance.q.items():
         if solution[i] == 1 and solution[j] == 1:
@@ -139,7 +134,7 @@ def construct_greedy_randomized(instance: SCQBFInstance, alpha: float) -> list[i
     return solution
 
 def local_search(instance: SCQBFInstance, initial_solution: SCQBFSolution) -> SCQBFSolution:
-    best_solution = SCQBFSolution(initial_solution.x, initial_solution.value)
+    best_solution = SCQBFSolution(list(initial_solution.x), initial_solution.value)
     
     improved = True
     while improved:
@@ -273,7 +268,7 @@ def solve_tabu_search(instance: SCQBFInstance, time_limit: int, tabu_tenure: int
         tabu_list[removed_var - 1] = iteration + tabu_tenure
         
         if current_solution.value > best_solution_so_far.value:
-            best_solution_so_far = SCQBFSolution(current_solution.x, current_solution.value)
+            best_solution_so_far = SCQBFSolution(list(current_solution.x), current_solution.value)
             if not target_reached and target_value is not None and best_solution_so_far.value >= target_value:
                 time_to_target = time.time() - start_time
                 target_reached = True
@@ -354,9 +349,7 @@ def solve_genetic_algorithm(instance, time_limit=600, pop_size=40, elite_size=5,
 
     population = create_initial_population(instance, POP_SIZE)
     
-    # Cria uma cópia do melhor atual
-    initial_best = max(population, key=lambda ind: ind.value)
-    best_solution_so_far = SCQBFSolution(initial_best.x, initial_best.value)
+    best_solution_so_far = max(population, key=lambda ind: ind.value)
 
     generation = 0
     while time.time() - start_time < time_limit:
@@ -387,8 +380,7 @@ def solve_genetic_algorithm(instance, time_limit=600, pop_size=40, elite_size=5,
         
         current_best = max(population, key=lambda ind: ind.value)
         if current_best.value > best_solution_so_far.value:
-            best_solution_so_far.x = current_best.x
-            best_solution_so_far.value = current_best.value
+            best_solution_so_far = current_best
             if not target_reached and target_value is not None and best_solution_so_far.value >= target_value:
                 time_to_target = time.time() - start_time
                 target_reached = True
@@ -400,36 +392,6 @@ def solve_genetic_algorithm(instance, time_limit=600, pop_size=40, elite_size=5,
         return best_solution_so_far, end_time - start_time, time_to_target, True
     else:
         return best_solution_so_far, end_time - start_time, end_time - start_time, False
-
-
-def _run_single_execution(instance_file: str, alg_name: str, seed: int, time_limit: int, target_value):
-    """Worker executed in a separate process: carrega a instância, seta as sementes e executa o algoritmo."""
-    # Reimportante: função definida no módulo (nível superior) para ser picklable no Windows
-    random.seed(seed)
-    np.random.seed(seed)
-
-    # carrega a instância dentro do worker para evitar problemas de pickle
-    instance = SCQBFInstance(instance_file)
-
-    # mapear nome do algoritmo para a função
-    if alg_name == 'GRASP':
-        func = solve_grasp
-    elif alg_name == 'TabuSearch':
-        func = solve_tabu_search
-    elif alg_name == 'GeneticAlgorithm':
-        func = solve_genetic_algorithm
-    elif alg_name == 'PLI':
-        func = solve_pli
-    else:
-        raise ValueError(f"Algoritmo desconhecido: {alg_name}")
-    print(f"\n     [{time.strftime('%H:%M')}] Executando seed {seed} com {alg_name}...", flush=True)
-    solution, total_time, time_to_target, target_reached = func(
-        instance,
-        time_limit=time_limit,
-        target_value=target_value
-    )
-
-    return (instance.name, alg_name, seed, target_value, bool(target_reached), float(time_to_target), float(solution.value), float(total_time))
 
 
 if __name__ == '__main__':
@@ -446,9 +408,9 @@ if __name__ == '__main__':
     
     # 3. Algoritmos a serem testados
     algorithms = {
-        #'GRASP': solve_grasp,
-        'TabuSearch': solve_tabu_search,
-        'GeneticAlgorithm': solve_genetic_algorithm
+        'GRASP': solve_grasp
+        #'TabuSearch': solve_tabu_search,
+        #'GeneticAlgorithm': solve_genetic_algorithm
     }
     
     with open(OUTPUT_FILE, 'w') as f:
@@ -457,44 +419,41 @@ if __name__ == '__main__':
 
         for instance_file, target_value in TTT_PLOT_CONFIG.items():
             print(f"\n--- Processando Instância: {instance_file} (Alvo: {target_value}) ---")
+            
+            try:
+                instance = SCQBFInstance(instance_file)
+            except Exception as e:
+                print(f"Erro ao carregar a instância {instance_file}. Pulando...")
+                continue
 
             for alg_name, solve_function in algorithms.items():
                 print(f"  -> Executando Algoritmo: {alg_name}")
+                
+                for seed in range(NUM_EXECUTIONS):
+                    # Define a semente para garantir reprodutibilidade e variedade
+                    random.seed(seed)
+                    np.random.seed(seed)
 
-                # cria tarefas para todos os seeds
-                tasks = [
-                    (instance_file, alg_name, seed, TIME_LIMIT_SECONDS, target_value)
-                    for seed in range(NUM_EXECUTIONS)
-                ]
+                    print(f"\r     Execução {seed + 1}/{NUM_EXECUTIONS}...", end="")
 
-                max_workers = max(min(NUM_EXECUTIONS, os.cpu_count()) - 2, 1)
+                    # Executa o algoritmo
+                    solution, total_time, time_to_target, target_reached = solve_function(
+                        instance, 
+                        time_limit=TIME_LIMIT_SECONDS,
+                        target_value=target_value
+                    )
+                    
+                    # Salva os resultados
+                    f.write(
+                        f"{instance.name},"
+                        f"{alg_name},"
+                        f"{seed},"
+                        f"{target_value},"
+                        f"{target_reached},"
+                        f"{time_to_target:.4f},"
+                        f"{solution.value},"
+                        f"{total_time:.4f}\n"
+                    )
+                print("\n     ...Concluído.")
 
-                # executa em paralelo e coleta resultados; grava no CSV no processo principal
-                with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
-                    futures = {executor.submit(_run_single_execution, *t): t[2] for t in tasks}
-                    completed = 0
-                    for fut in concurrent.futures.as_completed(futures):
-                        completed += 1
-                        try:
-                            (inst_name, alg, seed, tgt, reached, t_to_tgt, sol_val, tot_time) = fut.result()
-                        except Exception as e:
-                            print(f"\n    [{time.strftime('%H:%M')}] Erro na execução do seed {futures[fut]}: {e}")
-                            continue
-
-                        # Salva os resultados (serializado no processo principal)
-                        f.write(
-                            f"{inst_name},"
-                            f"{alg},"
-                            f"{seed},"
-                            f"{tgt},"
-                            f"{int(reached)},"
-                            f"{t_to_tgt:.4f},"
-                            f"{sol_val:.4f},"
-                            f"{tot_time:.4f}\n"
-                        )
-
-                        print(f"\r     [{time.strftime('%H:%M')}] Execuções concluídas: {completed}/{NUM_EXECUTIONS}...", end="")
-
-                print(f"\n[{time.strftime('%H:%M')}]...Concluído.")
-
-    print(f"\n     [{time.strftime('%H:%M')}] Experimento finalizado! Resultados salvos em '{OUTPUT_FILE}'.")
+    print(f"\nExperimento finalizado! Resultados salvos em '{OUTPUT_FILE}'.")
