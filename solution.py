@@ -52,7 +52,10 @@ class SCQBFSolution:
     x: list[int]
     value: float
 
-def scqbf_evaluate(instance: SCQBFInstance, solution: list) -> float:
+def scqbf_evaluate(instance: SCQBFInstance, solution: SCQBFSolution) -> float:
+    if solution.value != 0:
+        return solution.value
+    
     objective_value = 0.0
     for (i, j), q_ij in instance.q.items():
         if solution[i] == 1 and solution[j] == 1:
@@ -136,7 +139,7 @@ def construct_greedy_randomized(instance: SCQBFInstance, alpha: float) -> list[i
     return solution
 
 def local_search(instance: SCQBFInstance, initial_solution: SCQBFSolution) -> SCQBFSolution:
-    best_solution = SCQBFSolution(list(initial_solution.x), initial_solution.value)
+    best_solution = SCQBFSolution(initial_solution.x, initial_solution.value)
     
     improved = True
     while improved:
@@ -270,7 +273,7 @@ def solve_tabu_search(instance: SCQBFInstance, time_limit: int, tabu_tenure: int
         tabu_list[removed_var - 1] = iteration + tabu_tenure
         
         if current_solution.value > best_solution_so_far.value:
-            best_solution_so_far = SCQBFSolution(list(current_solution.x), current_solution.value)
+            best_solution_so_far = SCQBFSolution(current_solution.x, current_solution.value)
             if not target_reached and target_value is not None and best_solution_so_far.value >= target_value:
                 time_to_target = time.time() - start_time
                 target_reached = True
@@ -351,7 +354,9 @@ def solve_genetic_algorithm(instance, time_limit=600, pop_size=40, elite_size=5,
 
     population = create_initial_population(instance, POP_SIZE)
     
-    best_solution_so_far = max(population, key=lambda ind: ind.value)
+    # Cria uma cópia do melhor atual
+    initial_best = max(population, key=lambda ind: ind.value)
+    best_solution_so_far = SCQBFSolution(initial_best.x, initial_best.value)
 
     generation = 0
     while time.time() - start_time < time_limit:
@@ -382,7 +387,8 @@ def solve_genetic_algorithm(instance, time_limit=600, pop_size=40, elite_size=5,
         
         current_best = max(population, key=lambda ind: ind.value)
         if current_best.value > best_solution_so_far.value:
-            best_solution_so_far = current_best
+            best_solution_so_far.x = current_best.x
+            best_solution_so_far.value = current_best.value
             if not target_reached and target_value is not None and best_solution_so_far.value >= target_value:
                 time_to_target = time.time() - start_time
                 target_reached = True
@@ -416,7 +422,7 @@ def _run_single_execution(instance_file: str, alg_name: str, seed: int, time_lim
         func = solve_pli
     else:
         raise ValueError(f"Algoritmo desconhecido: {alg_name}")
-    print(f"     [{time.strftime('%H:%M')}] Executando seed {seed} com {alg_name}...", flush=True)
+    print(f"\n     [{time.strftime('%H:%M')}] Executando seed {seed} com {alg_name}...", flush=True)
     solution, total_time, time_to_target, target_reached = func(
         instance,
         time_limit=time_limit,
@@ -440,9 +446,9 @@ if __name__ == '__main__':
     
     # 3. Algoritmos a serem testados
     algorithms = {
-        #'GRASP': solve_grasp
-        'TabuSearch': solve_tabu_search,
-        #'GeneticAlgorithm': solve_genetic_algorithm
+        #'GRASP': solve_grasp,
+        #'TabuSearch': solve_tabu_search,
+        'GeneticAlgorithm': solve_genetic_algorithm
     }
     
     with open(OUTPUT_FILE, 'w') as f:
