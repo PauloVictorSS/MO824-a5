@@ -52,8 +52,8 @@ class SCQBFSolution:
     x: list[int]
     value: float
 
-def scqbf_evaluate(instance: SCQBFInstance, solution: SCQBFSolution) -> float:
-    if solution.value != 0:
+def scqbf_evaluate(instance: SCQBFInstance, solution) -> float:
+    if hasattr(solution, 'value') and solution.value != 0:
         return solution.value
     
     objective_value = 0.0
@@ -447,7 +447,7 @@ if __name__ == '__main__':
     # 3. Algoritmos a serem testados
     algorithms = {
         #'GRASP': solve_grasp,
-        #'TabuSearch': solve_tabu_search,
+        'TabuSearch': solve_tabu_search,
         'GeneticAlgorithm': solve_genetic_algorithm
     }
     
