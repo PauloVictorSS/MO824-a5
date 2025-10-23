@@ -408,9 +408,9 @@ if __name__ == '__main__':
     
     # 3. Algoritmos a serem testados
     algorithms = {
-        'GRASP': solve_grasp
-        #'TabuSearch': solve_tabu_search,
-        #'GeneticAlgorithm': solve_genetic_algorithm
+        'GRASP': solve_grasp,
+        'TabuSearch': solve_tabu_search,
+        'GeneticAlgorithm': solve_genetic_algorithm
     }
     
     with open(OUTPUT_FILE, 'w') as f:
