@@ -3,6 +3,8 @@ import os
 import random
 import time
 import numpy as np
+import subprocess
+import shlex
 
 ## import solvers ##
 from GA.scqbf_instance import *
@@ -28,8 +30,49 @@ def solve_grasp(instance_file, time_limit, target_value):
 
     return best_solution, elapsed_time, time_to_target, target_reached
 
+
+
+
 def solve_tabu_search(instance_file, time_limit, target_value):
-    pass
+    """
+    Runs the TS_QBF Java program using subprocess and captures the output.
+    """
+    # Path to the compiled Java class or JAR file
+    java_class = "problems.qbf.solvers.TS_QBF"  # Fully qualified class name
+    java_path = "TS/TS-Framework/TS-Framework.iml"  # Path to compiled .class files
+
+    # Command to execute the Java program
+    cmd = f'java -cp "{java_path}" {java_class} {instance_file} {time_limit} {target_value}'
+
+    try:
+        # Run the Java program
+        result = subprocess.run(
+            shlex.split(cmd),  # Split the command into a list
+            capture_output=True,  # Capture stdout and stderr
+            text=True,  # Decode output as text
+            encoding="utf-8",  # Use UTF-8 encoding
+        )
+
+        # Check if the process completed successfully
+        if result.returncode == 0:
+            print("Java program executed successfully!")
+            print("Output:", result.stdout.strip())  # Print the program's output
+            # Parse the output if needed (e.g., CSV format)
+            output_parts = result.stdout.strip().split(",")
+            best_solution = Solution(None, float(output_parts[0]))
+            elapsed_time = float(output_parts[1])
+            time_to_target = float(output_parts[2])
+            target_reached = int(output_parts[3]) # 1 for True, 0 for False
+            
+            return best_solution, elapsed_time, time_to_target, target_reached
+        else:
+            print("Java program failed!")
+            print("Error:", result.stderr.strip())
+            return None
+    except Exception as e:
+        print("An error occurred while running the Java program:", str(e))
+        return None
+    
 
 def solve_ga(instance_file, time_limit, target_value):
     instance = read_max_sc_qbf_instance(instance_file, target_value)
@@ -89,8 +132,8 @@ if __name__ == '__main__':
     
     # 3. Algoritmos a serem testados
     algorithms = {
-        'GRASP': solve_grasp,
-        #'TabuSearch': solve_tabu_search,
+        #'GRASP': solve_grasp,
+        'TabuSearch': solve_tabu_search,
         #'GeneticAlgorithm': solve_ga
     }
     

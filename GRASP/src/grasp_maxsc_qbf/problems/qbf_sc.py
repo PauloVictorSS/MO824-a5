@@ -102,11 +102,11 @@ class QBF_SC(Evaluator[int]):
         self.set_variables(solution)
         
         if not self.is_feasible(solution):
-            solution.cost = float('-inf')  # Infeasible solution
-            return solution.cost
+            solution.value = float('-inf')  # Infeasible solution
+            return solution.value
         
-        solution.cost = self.evaluate_QBF()
-        return solution.cost
+        solution.value = self.evaluate_QBF()
+        return solution.value
     
     def evaluate_QBF(self) -> float:
         """Matrix multiplication for QBF evaluation"""

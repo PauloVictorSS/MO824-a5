@@ -208,10 +208,12 @@ class AbstractGRASP(ABC, Generic[E]):
         target_reached = 0
         time_to_target = -1.0
         start_total_time_counter = time.time()
+        i = 0
+        elapsed_time = 0.0
 
         self.best_sol = self.create_empty_sol()
         
-        for i in range(self.iterations):
+        while elapsed_time < time_limit:
             self.constructive_heuristic()
             
             # Ensure feasibility before local search
@@ -227,13 +229,10 @@ class AbstractGRASP(ABC, Generic[E]):
                     target_reached = 1
                 if self.verbose:
                     print(f"(Iter. {i}) BestSol = {self.best_sol}")
+            elapsed_time = time.time() - start_total_time_counter
+            i += 1
+        self.iterations = i # set how many iterations actually run        
         
-            if time.time() - start_total_time_counter > time_limit:
-                print("Total time limit reached, stopping this instance.")
-                self.iterations = i # set how many iterations actually run
-                break
-
-        elapsed_time = time.time() - start_total_time_counter
         return self.best_sol, elapsed_time, time_to_target, target_reached
     
     def constructive_stop_criteria(self) -> bool:
