@@ -13,6 +13,9 @@ from GA.scqbf_evaluator import *
 from GA.scqbf_ga import *
 
 from GRASP.src.grasp_maxsc_qbf.algorithms.grasp_qbf_sc import *
+import gurobipy as gp
+
+from solution import SCQBFSolution
 
 ## Arguments ##
 # GRASP parameters
@@ -85,9 +88,49 @@ def solve_ga(instance_file, time_limit, target_value):
     return best_solution, elapsed_time, time_to_target, target_reached
 
 
-
 def solve_pli(instance_file, time_limit, target_value):
-    pass
+    instance = read_max_sc_qbf_instance(instance_file, target_value)
+    model = gp.Model("MAX-SC-QBF-Linearized")
+    n = instance.n
+    a = instance.A
+    
+    x = model.addVars(n, vtype=gp.GRB.BINARY, name="x")
+    y = model.addVars(n, n, vtype=gp.GRB.BINARY, name="y")
+
+    obj = gp.LinExpr()
+    for i in range(n):
+      for j in range(i, n):
+          obj += a[i][j] * y[i, j]
+    model.setObjective(obj, gp.GRB.MAXIMIZE)
+
+    for i in range(n):
+      for j in range(i, n):
+        model.addConstr(y[i, j] <= x[i], name=f"lin_yij_le_xi_{i}_{j}")
+        model.addConstr(y[i, j] <= x[j], name=f"lin_yij_le_xj_{i}_{j}")
+        model.addConstr(y[i, j] >= x[i] + x[j] - 1, name=f"lin_yij_ge_sum_{i}_{j}")
+
+    for k in range(1, n + 1):
+      covering_subsets = []
+      for i in range(n):
+        if k in instance.subsets[i]:
+          covering_subsets.append(i)
+    
+      if covering_subsets:
+        model.addConstr(sum(x[i] for i in covering_subsets) >= 1, name=f"cover_{k}")
+
+    model.setParam('TimeLimit', time_limit)
+    model.setParam('OutputFlag', 0)
+    start_time = time.time()
+    model.optimize()
+    end_time = time.time()
+
+    if model.status == gp.GRB.OPTIMAL or model.status == gp.GRB.TIME_LIMIT:
+        solution_x = [x[i].x for i in range(n)]
+        solution = SCQBFSolution(solution_x, model.objVal)
+        return solution, end_time - start_time, -1, model.objVal >= target_value
+    else:
+        print("PLI: Nenhuma solução viável encontrada.")
+        return SCQBFSolution(np.zeros(instance.n), -np.inf), end_time - start_time, -1, model.objVal >= target_value
 
 # Utility function
 
@@ -128,13 +171,13 @@ if __name__ == '__main__':
     # 2. Parâmetros do experimento
     NUM_EXECUTIONS = 20
     TIME_LIMIT_SECONDS = 10 * 60  # 10 minutos por execução 
-    OUTPUT_FILE = 'ttt_plot_results.csv'
+    OUTPUT_FILE = 'results/ttt_plot_results.csv'
     
     # 3. Algoritmos a serem testados
     algorithms = {
-        #'GRASP': solve_grasp,
+        'GRASP': solve_grasp,
         'TabuSearch': solve_tabu_search,
-        #'GeneticAlgorithm': solve_ga
+        'GeneticAlgorithm': solve_ga
     }
     
     with open(OUTPUT_FILE, 'w') as f:
@@ -153,7 +196,7 @@ if __name__ == '__main__':
                     for seed in range(NUM_EXECUTIONS)
                 ]
 
-                max_workers = max(min(NUM_EXECUTIONS, os.cpu_count()) - 2, 1)
+                max_workers = 1
 
                 # executa em paralelo e coleta resultados; grava no CSV no processo principal
                 with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:

@@ -57,7 +57,9 @@ def generate_ttt_plots(df: pd.DataFrame, output_dir: str):
         plt.grid(True, which="both", linestyle=':', linewidth=0.6)
         plt.legend()
         
-        filename = f"ttt_plot_{instance_name.split('.')[0]}_target_{target_value}.png"
+        base_name = os.path.basename(instance_name) 
+        file_stem = os.path.splitext(base_name)[0]
+        filename = f"ttt_plot_{file_stem}_target_{target_value}.png"
         plt.savefig(os.path.join(output_dir, filename))
         plt.close()
 
@@ -106,8 +108,8 @@ def generate_performance_profile(df: pd.DataFrame, output_dir: str):
 
 
 def main():
-    CSV_FILE = 'ttt_plot_results.csv' 
-    OUTPUT_DIR = 'graficos_analise'  
+    CSV_FILE = 'results/performance_profile_results.csv' 
+    OUTPUT_DIR = 'graphs'  
     
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)

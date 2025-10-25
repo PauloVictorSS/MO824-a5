@@ -1,0 +1,16 @@
+instance,algorithm,execution_seed,target_value,target_reached,time_to_target,final_solution_value,total_time
+in/instance-01.txt,PLI,0,10000,0,-1.0000,195.0000,0.0280
+in/instance-02.txt,PLI,0,10000,0,-1.0000,200.0000,0.1194
+in/instance-03.txt,PLI,0,10000,0,-1.0000,283.0000,0.0796
+in/instance-04.txt,PLI,0,10000,0,-1.0000,604.0000,8.3682
+in/instance-05.txt,PLI,0,10000,0,-1.0000,677.0000,5.6451
+in/instance-06.txt,PLI,0,10000,0,-1.0000,514.0000,9.6414
+in/instance-07.txt,PLI,0,10000,0,-1.0000,1481.0000,600.0189
+in/instance-08.txt,PLI,0,10000,0,-1.0000,2264.0000,600.0119
+in/instance-09.txt,PLI,0,10000,0,-1.0000,2008.0000,600.0154
+in/instance-10.txt,PLI,0,10000,0,-1.0000,5192.0000,600.0671
+in/instance-11.txt,PLI,0,10000,0,-1.0000,4464.0000,600.0656
+in/instance-12.txt,PLI,0,10000,0,-1.0000,4747.0000,600.0753
+in/instance-13.txt,PLI,0,10000,0,-1.0000,7058.0000,600.1650
+in/instance-14.txt,PLI,0,10000,0,-1.0000,9042.0000,600.2225
+in/instance-15.txt,PLI,0,10000,0,-1.0000,8533.0000,600.1956

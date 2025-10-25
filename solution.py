@@ -396,15 +396,27 @@ def solve_genetic_algorithm(instance, time_limit=600, pop_size=40, elite_size=5,
 
 if __name__ == '__main__':
     TTT_PLOT_CONFIG = {
-        'in/instance-05.txt': 1100,
-        'in/instance-10.txt': 4000,
-        'in/instance-15.txt': 8000,
+        'in/instance-01.txt': 10000,
+        'in/instance-02.txt': 10000,
+        'in/instance-03.txt': 10000,
+        'in/instance-04.txt': 10000,
+        'in/instance-05.txt': 10000,
+        'in/instance-06.txt': 10000,
+        'in/instance-07.txt': 10000,
+        'in/instance-08.txt': 10000,
+        'in/instance-09.txt': 10000,
+        'in/instance-10.txt': 10000,
+        'in/instance-11.txt': 10000,
+        'in/instance-12.txt': 10000,
+        'in/instance-13.txt': 10000,
+        'in/instance-14.txt': 10000,
+        'in/instance-15.txt': 10000,
     }
 
     # 2. Parâmetros do experimento
     NUM_EXECUTIONS = 20
     TIME_LIMIT_SECONDS = 600 
-    OUTPUT_FILE = 'ttt_plot_results.csv'
+    OUTPUT_FILE = 'results/performance_profile_results.csv'
     
     # 3. Algoritmos a serem testados
     algorithms = {
